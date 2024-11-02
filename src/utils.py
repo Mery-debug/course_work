@@ -6,9 +6,11 @@ from typing import Any, Union
 
 import requests
 from dotenv import load_dotenv
+from pandas import DataFrame
 
 
 def hello_date():
+    """Функция приветствия от времени суток"""
     now = datetime.datetime.now()
     now += datetime.timedelta()
     hello = 0
@@ -24,7 +26,11 @@ def hello_date():
     return hello
 
 
+path = "../../data/operations.xlsx"
+
+
 def read_file(path: str) -> list[dict]:
+    """Функция чтения excel файла"""
     file_name = os.path.join(os.path.abspath(__name__), path)
     """function which read xlsx files with lib pandas"""
     transactions = []
@@ -53,35 +59,63 @@ def read_file(path: str) -> list[dict]:
     return transactions
 
 
-def return_cash(amount: Union[int, str], from_currency: str, to_currency: str) -> Any:
-    """Function API take dict transaction and return amount in RUB only"""
+def return_cash() -> Union[list, str]:
+    """Function API take dict transaction and return amount"""
     load_dotenv()
     api_key = os.getenv("API_KEY")
-    url = f"https://api.apilayer.com/exchangerates_data/convert?to={to_currency}&from={from_currency}&amount={amount}"
+    url_usd = f"https://api.apilayer.com/exchangerates_data/convert?to=RUB&from=USD&amount=1"
+    url_eur = f"https://api.apilayer.com/exchangerates_data/convert?to=RUB&from=EUR&amount=1"
     headers = {"apikey": f"{api_key}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        if from_currency in ["EUR", "USD"]:
-            return round(response.json()["result"], 2)
-        else:
-            return amount
+    response_usd = requests.get(url_usd, headers=headers)
+    response_eur = requests.get(url_eur, headers=headers)
+    if response_usd.status_code == 200 and response_eur.status_code == 200:
+        eur = round(response_eur.json()["result"], 2)
+        usd = round(response_usd.json()["result"], 2)
+        return [eur, usd]
     else:
-        return f"Возможная причина {response.reason}"
+        return f"Возможные причины {response_eur.reason} {response_usd.reason}"
 
 
-def return_invest(data: str) -> list[dict]:
-    # url = f"http://api.marketstack.com/v1/eod/{data}"
-    # url_2 = f"http://api.marketstack.com/v1/eod/latest"
+def return_invest() -> list[dict]:
+    """
+    Функция АПИ которая выводит акции из s&p 500 по запросу пользователя,
+    ввести в качестве аргумента название акции, например APPL
+    """
     load_dotenv()
+    response = []
     apikey = os.getenv("APIKEY")
-    url = f"https://api.marketstack.com/v1/eod?access_key={apikey}"
-    querystring = {"symbols": "AAPL"}
-    response = requests.get(url, params=querystring)
-
-    print(response.json())
-def card_info(transactions: list[dict], card_number: str) -> list[dict]:
-    pass
+    url = f"https://financialmodelingprep.com/api/v3/quote/AAPL,AMZN,GOOGL,MSFT,TSLA?apikey={apikey}"
+    response.append(requests.get(url).json())
+    return response
 
 
-def sort_by_sum(transaction: list[dict]) -> list[dict]:
-    pass
+# print(return_invest())
+
+
+def card_info(transactions: list[dict]) -> list:
+    total_card = 0
+    total_card_2 = 0
+    total_card_3 = 0
+    card = ""
+    card_2 = ""
+    card_3 = ""
+    for transaction in transactions:
+        card, card_2, card_3 = map(str, transaction.get("card number"))
+        if card:
+            total_card = sum(transaction.get("operation").get("add"))
+        elif card_2:
+            total_card_2 = sum(transaction.get("operation").get("add"))
+        elif card_3:
+            total_card_3 = sum(transaction.get("operation").get("add"))
+    total_cash = total_card / 100
+    total_cash_2 = total_card_2 / 100
+    total_cash_3 = total_card_3 / 100
+    return [card, card_2, card_3, total_card, total_card_2, total_card_3, total_cash, total_cash_2, total_cash_3]
+
+
+print(card_info(read_file(path)))
+
+
+def top_5(transactions: list[dict]) -> DataFrame:
+    for transaction in transactions:
+        df = pd.DataFrame()

@@ -22,7 +22,10 @@ def investment_bank(month: str, transactions: list[dict[str, Any]], limit: int) 
                     invest_t = limit * 2 - invest
                     total += invest_t
             elif limit >= 100:
-                invest = transaction.get("operation").get("add") % 1000
+                invest = transaction.get("operation").get("add") % 100
+                if invest < 99 or invest == 00:
+                    invest_t = limit - invest
+                    total += invest_t
     return total
 
 

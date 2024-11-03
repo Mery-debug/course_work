@@ -13,32 +13,31 @@ def hello_date():
     """Функция приветствия от времени суток"""
     now = datetime.datetime.now()
     now += datetime.timedelta()
-    hello = 0
+    hello = {"hello": ""}
     if 4 < now.hour <= 12:
-        hello = 'Доброе утро'
+        hello["hello"] = 'Доброе утро'
     if 16 >= now.hour > 12:
-        hello = 'Добрый день'
+        hello["hello"] = 'Добрый день'
     if 24 >= now.hour > 16:
-        hello = 'Добрый вечер'
+        hello["hello"] = 'Добрый вечер'
     if 4 >= now.hour >= 0:
-        hello = 'Доброй ночи'
+        hello["hello"] = 'Доброй ночи'
 
     return hello
 
 
-path = "../../data/operations.xlsx"
+path_xlsx = "../../data/operations.xlsx"
 
 
 def read_file(path: str) -> list[dict]:
     """Функция чтения excel файла"""
     file_name = os.path.join(os.path.abspath(__name__), path)
-    """function which read xlsx files with lib pandas"""
     transactions = []
     transaction = pd.read_excel(file_name)
     for index, row in transaction.iterrows():
         transactions.append(
             {
-                "date of operation": str(row["Дата операции"]),
+                "date of operation": row["Дата операции"],
                 "date of currency": row["Дата платежа"],
                 "card number": row["Номер карты"],
                 "status": row["Статус"],
@@ -50,13 +49,15 @@ def read_file(path: str) -> list[dict]:
                 "currency": row["Валюта платежа"],
                 "cashback": row["Кэшбэк"],
                 "category": row["Категория"],
-                "MCC": row["MCC"],
                 "description": row["Описание"],
-                "bonuses": row["Бонусы"],
                 "Investment bank": row["Округление на инвесткопилку"],
                 "add with round": row["Сумма операции с округлением"]
             })
+    transactions.pop(1)
     return transactions
+
+
+print(read_file(path_xlsx))
 
 
 def return_cash() -> Union[list, str]:
@@ -100,22 +101,22 @@ def card_info(transactions: list[dict]) -> list:
     card_2 = ""
     card_3 = ""
     for transaction in transactions:
-        card, card_2, card_3 = map(str, transaction.get("card number"))
+        card = transaction.get("card number")
         if card:
-            total_card = sum(transaction.get("operation").get("add"))
-        elif card_2:
-            total_card_2 = sum(transaction.get("operation").get("add"))
-        elif card_3:
-            total_card_3 = sum(transaction.get("operation").get("add"))
+            total_card += transaction.get("operation").get("add")
+        # elif card_2:
+        #     total_card_2 = sum(transaction.get("operation").get("add"))
+        # elif card_3:
+        #     total_card_3 = sum(transaction.get("operation").get("add"))
     total_cash = total_card / 100
-    total_cash_2 = total_card_2 / 100
-    total_cash_3 = total_card_3 / 100
-    return [card, card_2, card_3, total_card, total_card_2, total_card_3, total_cash, total_cash_2, total_cash_3]
+    # total_cash_2 = total_card_2 / 100
+    # total_cash_3 = total_card_3 / 100
+    return [card, round(total_card, 2), round(total_cash, 2)]
 
 
-print(card_info(read_file(path)))
+# print(card_info(read_file(path)))
 
 
-def top_5(transactions: list[dict]) -> DataFrame:
-    for transaction in transactions:
-        df = pd.DataFrame()
+# def top_5(transactions: list[dict]) ->:
+#     for transaction in transactions:
+#         df = pd.DataFrame()
